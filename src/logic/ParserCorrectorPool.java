@@ -13,17 +13,28 @@ public class ParserCorrectorPool extends Thread{
 	
 	private ArrayList<String> availableWork;
 	
+	private boolean running;
+	
 	private ParserCorrectorPool(){
 		init();
 	}
 	
-
+	@Override
+	public void run(){
+		System.out.println("ParserCorrectorPool : Starting run cycle");
+		while(running);
+	}
+	
 	public void addWeatherData(String weatherData) {
+		System.out.println("ParserCorrectorPool : Adding work!");
 		// Lock the list
 		synchronized (availableWork) {
+			System.out.println("ParserCorrectorPool : Locked the availableWork!");
 			// Add the new data
 			availableWork.add(weatherData);
+			System.out.println("ParserCorrectorPool : Added work! " + weatherData);
 		}
+		ParserCorrectorPool.yield();
 	}
 
 	public static ParserCorrectorPool getPool() {
@@ -37,16 +48,12 @@ public class ParserCorrectorPool extends Thread{
 	}
 	
 	protected String checkForAvailableWork(ParserCorrector corrector){
+		System.out.println("ParserCorrectorPool : checkForAvailableWork");
 		synchronized(corrector){
-			while(availableWork.isEmpty()){
-				try {
-					ParserCorrector.sleep(20);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
+			System.out.println("ParserCorrectorPool : Synced on Corrector.");
+			while(availableWork.isEmpty());
 			synchronized(availableWork){
+				System.out.println("ParserCorrectorPool : Locked the AvailableWork.");
 				return availableWork.remove(0);
 			}
 		}

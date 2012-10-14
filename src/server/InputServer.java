@@ -53,14 +53,17 @@ public class InputServer extends Thread{
 			System.out.println("InputServer : No protocols available, adding new one.");
 			ServerProtocol protocol = new ServerProtocol();
 			protocol.start();
-	        while(!clients.add(protocol));
+			clients.add(protocol);
+	        while(!protocol.addClient(client));
 	        
 	        System.out.println("InputServer : Adding client succeeded!");
 		}else if(clients.getLast().isFull()){
 			System.out.println("InputServer : All protocols are full, adding new one.");
 			ServerProtocol protocol = new ServerProtocol();
-			while(!clients.add(protocol));
-	        protocol.start();
+			protocol.start();
+			clients.add(protocol);
+			 while(!protocol.addClient(client));
+	       
 	        System.out.println("InputServer : Adding client succeeded!");
 		}else{
 			while(!clients.getLast().addClient(client) );

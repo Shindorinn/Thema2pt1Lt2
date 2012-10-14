@@ -16,7 +16,7 @@ import logic.ParserCorrectorPool;
  *
  */
 
-public class ServerProtocol implements Runnable{
+public class ServerProtocol extends Thread{
 
 	// Max amount of connections allowed by a ServerProtocol
 	public static final int MAX_CONNECTIONS = 25;
@@ -25,15 +25,19 @@ public class ServerProtocol implements Runnable{
 	private LinkedList<Socket> connections;
 	
 	// The lists with the connectionStreams
-	private HashMap<Socket, BufferedReader> inputBuffers;
+	private HashMap<Socket, BufferedReader> inputStreams;
 	private HashMap<Socket, ObjectOutputStream> outputStreams;
-		
+	
+	// The list with the input buffers
+	private HashMap<Socket, StringBuffer> inputBuffers;
+	
 	// The reference to the ParserCorrectorPool
 	private ParserCorrectorPool parserCorrectorPool;
 	
 	// The fields for the threading
 	private boolean running;
-	private Thread thread;
+	
+	private String input;
 	
 	public ServerProtocol(){
 		init(ParserCorrectorPool.getPool());
@@ -41,6 +45,7 @@ public class ServerProtocol implements Runnable{
 	
 	@Override
 	public void run() {
+		System.out.println("ServerProtocol : Starting to run.");
 		while(running){
 			handleClients();
 		}
@@ -53,35 +58,30 @@ public class ServerProtocol implements Runnable{
 		// Is there still a spot for a connection?
 		if(connections.size() < MAX_CONNECTIONS){
 			// Add the connection
+			System.out.println("ServerProtocol : Adding a client!");
 			connections.add(client);
 			addStreamsAndBuffer(client);
 			return true;
 		}else{
+			System.out.println("ServerProtocol : I don't have any space for new clients!");
 			// No spots available
 			return false;
 		}
 	}
 
-	protected void start(){
-		this.thread.start();
-	}
-
 	private void handleClients(){
 		for(Socket client : connections){
-			
 			try{
 				// From Server to Client
 		        // ObjectOutputStream out = outputStreams.get(client);
 		        // From Client to Server
-		        BufferedReader in = inputBuffers.get(client);
-		        if(client == null){
-		        	System.err.println("NOOOOOOOOOOOOOZZZZZ!!!!");
-		        }
+		        BufferedReader in = inputStreams.get(client);
+		       
 		        // The variables containing the information received from the Client        
-		        StringBuffer fromClient = new StringBuffer();
-		        String input = "";
+		        StringBuffer fromClient = inputBuffers.get(client);
 		        
 		        if( ( input = in.readLine() ) != null){
+		        	// System.out.println("ServerProtocol : Input = " +input);
 		        	// Add the latest data
 		        	fromClient.append(input);
 		        	// Was the it the end of the file? 
@@ -106,12 +106,12 @@ public class ServerProtocol implements Runnable{
 
 	private void addStreamsAndBuffer(Socket client) {
 		try{
-			BufferedReader in = new BufferedReader( new InputStreamReader(client.getInputStream() ) );
 			System.out.println("ServerProtocol : Adding streams and buffers!");
 			
-			
-			this.inputBuffers.put(client,  in );
+			this.inputStreams.put(client,  new BufferedReader( new InputStreamReader(client.getInputStream() ) ) );
 			this.outputStreams.put(client, new ObjectOutputStream(client.getOutputStream()) );
+			
+			this.inputBuffers.put(client, new StringBuffer());
 		}catch (IOException e) {
 			System.err.println("ServerProtocol : An error occurred during adding the clientstreams.");
 			e.printStackTrace();
@@ -132,11 +132,12 @@ public class ServerProtocol implements Runnable{
 		
 		this.connections = new LinkedList<Socket>();
 		
-		this.inputBuffers = new HashMap<Socket, BufferedReader>();
+		this.inputStreams = new HashMap<Socket, BufferedReader>();
 		this.outputStreams = new HashMap<Socket, ObjectOutputStream>();
 		
+		this.inputBuffers = new HashMap<Socket, StringBuffer>();
+		
 		this.running = true;
-		this.thread = new Thread(this);
 		// TODO
 		// thread.start();
 	}

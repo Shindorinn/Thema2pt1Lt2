@@ -10,6 +10,7 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
+import data.DBPortal;
 import data.MeasurementReferenceData;
 import domain.Measurement;
 
@@ -30,7 +31,9 @@ public class ParserCorrector extends Thread{
 	
 	// The completed measurements
 	private ArrayList<Measurement> measurements;
-	//private DBPortal db;
+	private DBPortal db;
+	
+	private boolean running;
 	
 	public ParserCorrector(ParserCorrectorPool pool){
 		
@@ -41,30 +44,37 @@ public class ParserCorrector extends Thread{
 		this.builder 		= 	new SAXBuilder();
 		this.measurements 	= 	new ArrayList<Measurement>();
 		
-		
-	//	this.db = new DBPortal();
+		this.running 		= 	true;
+		this.db 			= 	DBPortal.getDBPortal();
 	}
 
 
 	@Override
 	public void run() {
-		getWork();
-		if(hasWork()){
-			work();
+		System.out.println("ParserCorrector : Starting run cycle");
+		while(running){
+			if(hasWork()){
+				work();
+			}else{
+				getWork();
+			}
+			ParserCorrector.yield();
 		}
-		ParserCorrector.yield();
-		
 	}
 
 	private void getWork() {
+		System.out.println("ParserCorrector : Getting work.");
 		input.add(pool.checkForAvailableWork(this));
+		System.out.println("ParserCorrectoer : Retrieved work.");
 	}
 
 
 	private boolean hasWork() {
 		if(!input.isEmpty()){
+			System.out.println("ParserCorrector : Got work.");
 			return true;
 		}else{
+			System.out.println("ParserCorrector : Don't have work.");
 			return false;
 		}
 	}
@@ -80,7 +90,7 @@ public class ParserCorrector extends Thread{
 	private void parse() {
 		System.out.println("ParserCorrector : Parsing");
 		try {
-			xmlDoc = builder.build(new StringReader(input.toString()));
+			xmlDoc = builder.build(new StringReader(input.get(0)) );
 		} catch (JDOMException e) {
 			System.err.println("ParserCorrector : JDOMException.");
 			e.printStackTrace();
@@ -200,10 +210,10 @@ public class ParserCorrector extends Thread{
 	}
 
 	private void save() {
-		// TODO 
+		 
 		System.out.println("ParserCorrector : Saving.");
 		this.referenceData.addMeasurements(measurements);
-		// this.dbportal.saveMeasurements(measurements);
+		this.db.saveMeasurements(measurements);
 		this.measurements.clear();
 	}
 
