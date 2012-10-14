@@ -37,6 +37,7 @@ public class InputServer extends Thread{
 		try {
 			System.out.println("Server : Listening for incoming connections.");
 			handleClient(server.accept() );
+			System.out.println("Server : Handled connections");
         } catch (IOException e) {
             System.err.println("Accept failed.");
             System.exit(1);
@@ -51,23 +52,29 @@ public class InputServer extends Thread{
 		
 		if(clients.isEmpty()){
 			System.out.println("InputServer : No protocols available, adding new one.");
+			
 			ServerProtocol protocol = new ServerProtocol();
-			protocol.start();
+			//protocol.start();
 			clients.add(protocol);
-	        while(!protocol.addClient(client));
+			
+	       // while(!protocol.isReady());
+	        System.out.println("Adding Client : " + protocol.addClient(client) );
 	        
 	        System.out.println("InputServer : Adding client succeeded!");
-		}else if(clients.getLast().isFull()){
+	        
+		}else if(!clients.getLast().addClient(client) ){
 			System.out.println("InputServer : All protocols are full, adding new one.");
+			
 			ServerProtocol protocol = new ServerProtocol();
-			protocol.start();
+			//protocol.start();
 			clients.add(protocol);
-			 while(!protocol.addClient(client));
+			
+	       // while(!protocol.isReady());
+	        System.out.println("Adding Client : " + protocol.addClient(client) );
 	       
 	        System.out.println("InputServer : Adding client succeeded!");
-		}else{
-			while(!clients.getLast().addClient(client) );
-	        System.out.println("InputServer : Adding client succeeded!");
+		} else {
+			System.out.println("InputServer : Everything went as planned");
 		}
 		
 	}

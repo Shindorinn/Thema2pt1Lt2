@@ -1,5 +1,6 @@
 package data;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -32,6 +33,11 @@ public class Database {
 										);
 			out.writeObject(mes);
 			out.close();
+		} catch (FileNotFoundException ex){
+			//create file.
+			File file = new File(rootFileName + slash + mes.getStn() + slash);
+			file.mkdirs();
+			save(mes);
 		} catch (IOException e) {
 			System.err.println("Database : An error occured during saving.");
 			e.printStackTrace();

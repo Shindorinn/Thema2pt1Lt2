@@ -64,19 +64,18 @@ public class ParserCorrector extends Thread{
 
 	private void getWork() {
 		System.out.println("ParserCorrector : Getting work.");
-		input.add(pool.checkForAvailableWork(this));
-		System.out.println("ParserCorrectoer : Retrieved work.");
+		String work = pool.checkForAvailableWork(this);
+		if(work != null){
+			input.add(work);
+			System.out.println("ParserCorrectoer : Retrieved work.");
+		}
 	}
 
 
 	private boolean hasWork() {
-		if(!input.isEmpty()){
-			System.out.println("ParserCorrector : Got work.");
-			return true;
-		}else{
-			System.out.println("ParserCorrector : Don't have work.");
-			return false;
-		}
+		boolean output = !input.isEmpty();
+		System.out.println("ParserCorrector : hasWork = " + output);
+		return output;
 	}
 
 
@@ -100,7 +99,7 @@ public class ParserCorrector extends Thread{
 		}
 		Element weatherData = xmlDoc.getRootElement();
 		
-		System.out.println(weatherData.getName());
+		//System.out.println(weatherData.getName());
 		
 		List<Element> measurements = weatherData.getChildren();
 		
@@ -127,8 +126,8 @@ public class ParserCorrector extends Thread{
 			short wnddir = Short.MIN_VALUE;
 			
 			for(Element e : elements){
-				System.out.println("Name : " + e.getName());
-				System.out.println("Value :" + e.getValue());
+				//System.out.println("Name : " + e.getName());
+				//System.out.println("Value :" + e.getValue());
 				
 				if(!e.getValue().equals("")){
 					if(e.getName().equals("STN")){
@@ -200,7 +199,7 @@ public class ParserCorrector extends Thread{
 		
 		for(Measurement m: measurements){
 			ArrayList<Measurement> referenceMeasurements = this.referenceData.getReferenceMeasurements(m.getStn());
-			if(!referenceMeasurements.isEmpty()){
+			if(referenceMeasurements != null){
 				Measurement extrapolation = this.extrapolate(referenceMeasurements);
 				checkMeasurement(m, extrapolation);
 			} else {

@@ -49,6 +49,11 @@ public class MeasurementReferenceData {
 		synchronized(measurementData){
 			// Get the needed list of measurements
 			measurements = measurementData.get(mes.getStn());
+			if(measurements == null){
+				// push in hashmap and get the reference
+				measurementData.put(mes.getStn(), new LinkedList<Measurement>());
+				measurements = measurementData.get(mes.getStn());
+			}
 		}
 		// Lock the list of measurements for work
 		synchronized(measurements){
@@ -60,6 +65,7 @@ public class MeasurementReferenceData {
 				measurements.removeFirst();
 			}
 		}
+	
 	}
 	
 	public ArrayList<Measurement> getReferenceMeasurements(int stn){
@@ -71,6 +77,9 @@ public class MeasurementReferenceData {
 		synchronized(measurementData){
 			// Get the needed list of measurements
 			referenceMeasurements = measurementData.get(stn);
+			if(referenceMeasurements == null){
+				return null;
+			}
 		}
 		// Lock the list of measurements
 		synchronized(referenceMeasurements){

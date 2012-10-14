@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -19,10 +21,11 @@ import logic.ParserCorrectorPool;
 public class ServerProtocol extends Thread{
 
 	// Max amount of connections allowed by a ServerProtocol
-	public static final int MAX_CONNECTIONS = 25;
+	public static final int MAX_CONNECTIONS = 5;
 	
 	// The array of connections
 	private LinkedList<Socket> connections;
+	private ArrayList<Socket> newConnections;
 	
 	// The lists with the connectionStreams
 	private HashMap<Socket, BufferedReader> inputStreams;
@@ -41,32 +44,38 @@ public class ServerProtocol extends Thread{
 	
 	public ServerProtocol(){
 		init(ParserCorrectorPool.getPool());
+		this.start();
 	}
 	
 	@Override
 	public void run() {
 		System.out.println("ServerProtocol : Starting to run.");
 		while(running){
+			checkForNewConnections();
 			handleClients();
+			ServerProtocol.yield();
 		}
 	}
 	
 	protected boolean addClient(Socket client){
 		if(client == null){
         	System.err.println("ServerProtocol : Client == null");
+        	return true;
+        } else {
+			// Is there still a spot for a connection?
+			if(connections.size() < MAX_CONNECTIONS){
+				// Add the connection
+				System.out.println("ServerProtocol : Adding a client!");
+				synchronized(newConnections){
+					newConnections.add(client);
+					return true;
+				}
+			}else{
+				System.out.println("ServerProtocol : I don't have any space for new clients!");
+				// No spots available
+				return false;
+			}
         }
-		// Is there still a spot for a connection?
-		if(connections.size() < MAX_CONNECTIONS){
-			// Add the connection
-			System.out.println("ServerProtocol : Adding a client!");
-			connections.add(client);
-			addStreamsAndBuffer(client);
-			return true;
-		}else{
-			System.out.println("ServerProtocol : I don't have any space for new clients!");
-			// No spots available
-			return false;
-		}
 	}
 
 	private void handleClients(){
@@ -81,7 +90,7 @@ public class ServerProtocol extends Thread{
 		        StringBuffer fromClient = inputBuffers.get(client);
 		        
 		        if( ( input = in.readLine() ) != null){
-		        	// System.out.println("ServerProtocol : Input = " +input);
+		        	// System.out.println("ServerProtocol " + client.toString() + " : Input = " +input);
 		        	// Add the latest data
 		        	fromClient.append(input);
 		        	// Was the it the end of the file? 
@@ -103,6 +112,16 @@ public class ServerProtocol extends Thread{
 
 	}
 	
+	private void checkForNewConnections(){
+		synchronized (newConnections) {
+			for(int i = 0; i < newConnections.size() ; i++){
+				Socket client = newConnections.remove(i);
+				connections.add(client);
+				addStreamsAndBuffer(client);
+			}
+		}
+	}
+	
 
 	private void addStreamsAndBuffer(Socket client) {
 		try{
@@ -112,6 +131,7 @@ public class ServerProtocol extends Thread{
 			this.outputStreams.put(client, new ObjectOutputStream(client.getOutputStream()) );
 			
 			this.inputBuffers.put(client, new StringBuffer());
+			System.out.println("ServerProtecol : Done adding streams and buffers");
 		}catch (IOException e) {
 			System.err.println("ServerProtocol : An error occurred during adding the clientstreams.");
 			e.printStackTrace();
@@ -128,25 +148,18 @@ public class ServerProtocol extends Thread{
 
 	
 	private void init(ParserCorrectorPool pool) {
-		this.parserCorrectorPool = pool;
-		
-		this.connections = new LinkedList<Socket>();
-		
-		this.inputStreams = new HashMap<Socket, BufferedReader>();
-		this.outputStreams = new HashMap<Socket, ObjectOutputStream>();
-		
-		this.inputBuffers = new HashMap<Socket, StringBuffer>();
-		
-		this.running = true;
-		// TODO
-		// thread.start();
-	}
-
-	public boolean isFull() {
-		if(connections.size() == MAX_CONNECTIONS-1){
-			return true;
-		}else{
-			return false;
+		synchronized(this){
+			this.parserCorrectorPool = pool;
+			
+			this.connections = new LinkedList<Socket>();
+			this.newConnections = new ArrayList<Socket>();
+			
+			this.inputStreams = new HashMap<Socket, BufferedReader>();
+			this.outputStreams = new HashMap<Socket, ObjectOutputStream>();
+			
+			this.inputBuffers = new HashMap<Socket, StringBuffer>();
+			
+			this.running = true;
 		}
 	}
 

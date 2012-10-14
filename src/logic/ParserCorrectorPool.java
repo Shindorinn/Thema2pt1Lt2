@@ -1,17 +1,18 @@
 package logic;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class ParserCorrectorPool extends Thread{
 
 	// The reference to itself to enable Singleton
 	private static ParserCorrectorPool instance;
 	// The max amount of ParserCorrector threads the pool can have
-	public static final int MAX_PARSERCORRECTORS = 25;
+	public static final int MAX_PARSERCORRECTORS = 5;
 	
 	private ArrayList<ParserCorrector> correctors;
 	
-	private ArrayList<String> availableWork;
+	private LinkedList<String> availableWork;
 	
 	private boolean running;
 	
@@ -47,21 +48,20 @@ public class ParserCorrectorPool extends Thread{
 		}
 	}
 	
-	protected String checkForAvailableWork(ParserCorrector corrector){
+	protected synchronized String checkForAvailableWork(ParserCorrector corrector){
 		System.out.println("ParserCorrectorPool : checkForAvailableWork");
-		synchronized(corrector){
-			System.out.println("ParserCorrectorPool : Synced on Corrector.");
-			while(availableWork.isEmpty());
-			synchronized(availableWork){
-				System.out.println("ParserCorrectorPool : Locked the AvailableWork.");
-				return availableWork.remove(0);
-			}
+		
+		System.out.println("ParserCorrectorPool : Synched on Corrector.");
+		while(availableWork.isEmpty()){
+			ParserCorrector.yield();
 		}
+		System.out.println("ParserCorrectorPool : Locked the AvailableWork.");
+		return availableWork.removeFirst();
 	}
 
 	private void init() {
 		// TODO
-		availableWork = new ArrayList<String>();
+		availableWork = new LinkedList<String>();
 		
 		correctors = new ArrayList<ParserCorrector>();
 		
