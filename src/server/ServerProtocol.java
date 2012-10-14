@@ -5,8 +5,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.nio.Buffer;
 import java.util.HashMap;
+import java.util.LinkedList;
 
 import logic.ParserCorrectorPool;
 
@@ -22,15 +22,12 @@ public class ServerProtocol implements Runnable{
 	public static final int MAX_CONNECTIONS = 25;
 	
 	// The array of connections
-	private Socket[] connections;
+	private LinkedList<Socket> connections;
 	
 	// The lists with the connectionStreams
 	private HashMap<Socket, BufferedReader> inputBuffers;
 	private HashMap<Socket, ObjectOutputStream> outputStreams;
-	
-	// The next available index
-	private int nextAvailable;
-	
+		
 	// The reference to the ParserCorrectorPool
 	private ParserCorrectorPool parserCorrectorPool;
 	
@@ -50,11 +47,13 @@ public class ServerProtocol implements Runnable{
 	}
 	
 	protected boolean addClient(Socket client){
+		if(client == null){
+        	System.err.println("ServerProtocol : Client == null");
+        }
 		// Is there still a spot for a connection?
-		if(connections.length < MAX_CONNECTIONS){
+		if(connections.size() < MAX_CONNECTIONS){
 			// Add the connection
-			connections[nextAvailable] = client;
-			nextAvailable++;
+			connections.add(client);
 			addStreamsAndBuffer(client);
 			return true;
 		}else{
@@ -72,13 +71,15 @@ public class ServerProtocol implements Runnable{
 			
 			try{
 				// From Server to Client
-		        ObjectOutputStream out = outputStreams.get(client);
+		        // ObjectOutputStream out = outputStreams.get(client);
 		        // From Client to Server
 		        BufferedReader in = inputBuffers.get(client);
-		        
+		        if(client == null){
+		        	System.err.println("NOOOOOOOOOOOOOZZZZZ!!!!");
+		        }
 		        // The variables containing the information received from the Client        
 		        StringBuffer fromClient = new StringBuffer();
-		        String input;
+		        String input = "";
 		        
 		        if( ( input = in.readLine() ) != null){
 		        	// Add the latest data
@@ -104,11 +105,14 @@ public class ServerProtocol implements Runnable{
 	
 
 	private void addStreamsAndBuffer(Socket client) {
-		try {
+		try{
+			BufferedReader in = new BufferedReader( new InputStreamReader(client.getInputStream() ) );
+			System.out.println("ServerProtocol : Adding streams and buffers!");
 			
-			this.inputBuffers.put(client,  new BufferedReader( new InputStreamReader(client.getInputStream() ) ) );
+			
+			this.inputBuffers.put(client,  in );
 			this.outputStreams.put(client, new ObjectOutputStream(client.getOutputStream()) );
-		} catch (IOException e) {
+		}catch (IOException e) {
 			System.err.println("ServerProtocol : An error occurred during adding the clientstreams.");
 			e.printStackTrace();
 		}
@@ -126,8 +130,7 @@ public class ServerProtocol implements Runnable{
 	private void init(ParserCorrectorPool pool) {
 		this.parserCorrectorPool = pool;
 		
-		this.connections = new Socket[ServerProtocol.MAX_CONNECTIONS];
-		this.nextAvailable = 0;
+		this.connections = new LinkedList<Socket>();
 		
 		this.inputBuffers = new HashMap<Socket, BufferedReader>();
 		this.outputStreams = new HashMap<Socket, ObjectOutputStream>();
@@ -136,6 +139,14 @@ public class ServerProtocol implements Runnable{
 		this.thread = new Thread(this);
 		// TODO
 		// thread.start();
+	}
+
+	public boolean isFull() {
+		if(connections.size() == MAX_CONNECTIONS-1){
+			return true;
+		}else{
+			return false;
+		}
 	}
 
 

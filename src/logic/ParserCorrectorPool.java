@@ -29,6 +29,7 @@ public class ParserCorrectorPool extends Thread{
 	public static ParserCorrectorPool getPool() {
 		if(ParserCorrectorPool.instance == null){
 			ParserCorrectorPool.instance = new ParserCorrectorPool();
+			ParserCorrectorPool.instance.start();
 			return ParserCorrectorPool.instance;
 		}else{
 			return ParserCorrectorPool.instance;

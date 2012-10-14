@@ -1,11 +1,16 @@
 package domain;
 
+import java.io.Serializable;
+
 /**
  * 
- * @author Arjan Strijland
+ * @author Arjan Strijland & Dustin Meijer
  *
  */
-public class Measurement {
+public class Measurement implements Serializable{
+	
+	// To enable this class to be reinflated
+	private static final long serialVersionUID = 1L;
 	
 	private int stn;
 	private String date;

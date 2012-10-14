@@ -1,12 +1,16 @@
 package data;
 
+import java.util.ArrayList;
+
+import domain.Measurement;
+
 public class DBPortal {
 
 	private static DBPortal instance;
 	private Database db;
 	
 	private DBPortal(){
-		
+		this.db = new Database();
 	}
 	
 	public static DBPortal getDBPortal(){
@@ -18,4 +22,7 @@ public class DBPortal {
 		}
 	}
 
+	public void saveMeasurements(ArrayList<Measurement> measurements){
+		db.saveMeasurements(measurements);
+	}
 }
