@@ -51,7 +51,7 @@ public class ParserCorrector extends Thread{
 
 	@Override
 	public void run() {
-		System.out.println("ParserCorrector : Starting run cycle");
+		//System.out.println("ParserCorrector : Starting run cycle");
 		while(running){
 			if(hasWork()){
 				work();
@@ -63,18 +63,18 @@ public class ParserCorrector extends Thread{
 	}
 
 	private void getWork() {
-		System.out.println("ParserCorrector : Getting work.");
+		//System.out.println("ParserCorrector : Getting work.");
 		String work = pool.checkForAvailableWork(this);
 		if(work != null){
 			input.add(work);
-			System.out.println("ParserCorrectoer : Retrieved work.");
+			//System.out.println("ParserCorrectoer : Retrieved work.");
 		}
 	}
 
 
 	private boolean hasWork() {
 		boolean output = !input.isEmpty();
-		System.out.println("ParserCorrector : hasWork = " + output);
+		//System.out.println("ParserCorrector : hasWork = " + output);
 		return output;
 	}
 
@@ -87,7 +87,7 @@ public class ParserCorrector extends Thread{
 
 
 	private void parse() {
-		System.out.println("ParserCorrector : Parsing");
+		//System.out.println("ParserCorrector : Parsing");
 		try {
 			xmlDoc = builder.build(new StringReader(input.get(0)) );
 		} catch (JDOMException e) {
@@ -195,7 +195,7 @@ public class ParserCorrector extends Thread{
 	 */
 
 	private void correct() {
-		System.out.println("ParserCorrector : Correcting.");
+		//System.out.println("ParserCorrector : Correcting.");
 		
 		for(Measurement m: measurements){
 			ArrayList<Measurement> referenceMeasurements = this.referenceData.getReferenceMeasurements(m.getStn());
@@ -210,7 +210,7 @@ public class ParserCorrector extends Thread{
 
 	private void save() {
 		 
-		System.out.println("ParserCorrector : Saving.");
+		System.out.println("ParserCorrector "+ super.toString() + ": Saving.");
 		this.referenceData.addMeasurements(measurements);
 		this.db.saveMeasurements(measurements);
 		this.measurements.clear();

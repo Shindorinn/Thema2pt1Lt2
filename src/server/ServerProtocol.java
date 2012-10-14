@@ -21,7 +21,7 @@ import logic.ParserCorrectorPool;
 public class ServerProtocol extends Thread{
 
 	// Max amount of connections allowed by a ServerProtocol
-	public static final int MAX_CONNECTIONS = 5;
+	public static final int MAX_CONNECTIONS = 50;
 	
 	// The array of connections
 	private LinkedList<Socket> connections;

@@ -8,25 +8,53 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 import domain.Measurement;
 
-public class Database {
+public class Database extends Thread{
 
 	private static final String rootFileName 	= "db";
 	private static final String slash 			= "/";
 	private static final String fileType		= ".db";
-		
+	
+	private LinkedList<Measurement> measurementsBuffer;
+	private LinkedList<Object> queries;
+	
+	private boolean running;
+	
 	protected Database(){
 		// This is protected to only allow the DBPortal to create a Database object.
+		this.measurementsBuffer = new LinkedList<Measurement>();
+		this.queries = new LinkedList<Object>();
+		
+		this.running = true;
+		this.start();
 	}
 	
+	public void run(){
+		while(running){
+			checkForMeasurements();
+			// checkForQueries();
+			Database.yield();
+		}
+	}
+	
+	private void checkForMeasurements() {
+		// System.out.println("Database : Checking for Measurements.");
+		synchronized(measurementsBuffer){
+			while(!measurementsBuffer.isEmpty()){
+				save(measurementsBuffer.removeFirst());
+			}
+		}
+	}
+
 	/**
 	 * This method will save a single Measurement object based on its stn and its date.
 	 * 
 	 * @param mes
 	 */
-	protected void save(Measurement mes){
+	private void save(Measurement mes){
 		try {
 			ObjectOutputStream out = new ObjectOutputStream(
 										new FileOutputStream(rootFileName + slash + mes.getStn() + slash + mes.getDate() + fileType)
@@ -51,8 +79,11 @@ public class Database {
 	 * @param measurements
 	 */
 	protected void saveMeasurements(ArrayList<Measurement> measurements){
-		for(Measurement mes : measurements){
-			this.save(mes);
+		//System.out.println("Database : Saving measurements!");
+		synchronized(this.measurementsBuffer){
+			for(Measurement mes : measurements){
+				this.measurementsBuffer.add(mes);
+			}
 		}
 	}
 	
